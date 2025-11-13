@@ -110,7 +110,6 @@ class SVNOvertimeAnalyzer{
 					'打卡-打卡时间记录'=>$entry['打卡时间记录'],
 				];
 			}
-
 			// 添加信息到该日期
 			$groupedByDate[$dateStr]['提交备注'][] = $entry['message'];
 			$groupedByDate[$dateStr]['提交文件'][] = $entry['files'];
