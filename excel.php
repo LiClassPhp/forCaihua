@@ -36,7 +36,7 @@ class Qv{
 	private function mergeHeaders($row1, $row2){
 		$lastValue = '';
 		foreach($row1 as &$cell){ //处理父标题 填充空数据
-			if(!empty(trim($cell))){
+			if($cell && !empty(trim($cell))){
 				$lastValue = $cell;
 			}
 			$cell = $lastValue;
