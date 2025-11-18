@@ -57,16 +57,15 @@ class SVNOvertimeAnalyzer{
 				}
 
 				$qvEndMinutes = 0;
-				if($entry['考勤概况-最晚']){
+				if(isset($entry['考勤概况-最晚']) && $entry['考勤概况-最晚']){
 					$start = new DateTime($dateStr . ' 18:30:00');
 					if(strpos($entry['考勤概况-最晚'],'次日')!== false){
 						$qvEndDate = str_replace('次日','',$entry['考勤概况-最晚']);
 						$end = DateTime::createFromFormat('Y-m-d H:i', $dateStr.' '.$qvEndDate)->modify('+1day');// 结束时间设为次日
-							
 					}else{
 						$end = DateTime::createFromFormat('Y-m-d H:i', $dateStr . ' '. $entry['考勤概况-最晚']);
 					};
-					$diff = $start->diff($end);// 计算时间差
+                    $end && $diff = $start->diff($end);// 计算时间差(20230613加班到凌晨 然后14号请假 变成未打卡没有打卡日期)
 					$qvEndMinutes = ($diff->h * 60) + $diff->i; // 将小时转换为分钟并加上剩余分钟
 				}
 				
@@ -100,14 +99,14 @@ class SVNOvertimeAnalyzer{
 					'加班时长说明' => '',
 					'加班费用' => 0,
 					'日期类型' => $dayType,
-					'打卡-时间'=>$entry['时间'],
-					'打卡-考勤概况-最早'=>$entry['考勤概况-最早'],
-					'打卡-考勤概况-最晚'=>$entry['考勤概况-最晚'],
-					'打卡-时间考勤概况-实际工作时长(小时)'=>$entry['考勤概况-实际工作时长(小时)'],
-					'打卡-考勤概况-考勤结果'=>$entry['考勤概况-考勤结果'],
-					'打卡-下班1-打卡时间'=>$entry['下班1-打卡时间'],
-					'打卡-下班1-打卡状态'=>$entry['下班1-打卡状态'],
-					'打卡-打卡时间记录'=>$entry['打卡时间记录'],
+					'打卡-时间'=>$entry['时间']??'',
+					'打卡-考勤概况-最早'=>$entry['考勤概况-最早']??'',
+					'打卡-考勤概况-最晚'=>$entry['考勤概况-最晚']??'',
+					'打卡-时间考勤概况-实际工作时长(小时)'=>$entry['考勤概况-实际工作时长(小时)']??'',
+					'打卡-考勤概况-考勤结果'=>$entry['考勤概况-考勤结果']??'',
+					'打卡-下班1-打卡时间'=>$entry['下班1-打卡时间']??'',
+					'打卡-下班1-打卡状态'=>$entry['下班1-打卡状态']??'',
+					'打卡-打卡时间记录'=>$entry['打卡时间记录']??'',
 				];
 			}
 			// 添加信息到该日期
@@ -195,11 +194,10 @@ function parseSVNLogRegex(){
 	已修改 : /scm/app/exports/exports.class.php";
 	 */
 
-
-	foreach (glob("svn/*.txt") as $filename) { //获取所有SVN文件
+    $logText = '';
+	foreach (glob("../svn/*.txt") as $filename) { //获取所有SVN文件
 	$logText .= file_get_contents($filename) ."\n"; //字符串合并
 	}
-
 	$entries = [];
 	// 匹配完整的SVN记录模式
 	// $pattern = '/版本:\s*(\d+)\s*作者:\s*([^\n]+)\s*日期:\s*([^\n]+)\s*信息:\s*([^\n]+)\s*----\s*已修改\s*:\s*([^\n]+)/';
@@ -220,9 +218,6 @@ function parseSVNLogRegex(){
 
 $entries = parseSVNLogRegex();
 
-
-
-
 $arrZw = $arrWs = $week = []; //进一步格式化数据
 foreach($entries as $key =>$value){
     $dateTime = DateTime::createFromFormat('Y年m月d日 H:i:s', $value['date']);
@@ -233,7 +228,7 @@ foreach($entries as $key =>$value){
 
 	//如果是周末 应该按照企微打卡记录来算 这里简单算一整天480分钟加班时间 周末暂时只保留一条数据
 	if(($dayOfWeek == 0 || $dayOfWeek == 6)){ //判断是否是周末
-		if($week[$dateStr]){
+		if(isset($week[$dateStr])&& $week[$dateStr]){
 			unset($entries[$key]); //删除本次数据
 		}else{
 			$week[$dateStr] = 1;
@@ -241,7 +236,7 @@ foreach($entries as $key =>$value){
 
 	}else{
 		if($timeStr >= '12:00:00' && $timeStr < '14:00:00'){ // 中午加班
-			if($arrZw[$dateStr]){
+			if(isset($arrZw[$dateStr]) && $arrZw[$dateStr]){
 				$lastKey = $arrZw[$dateStr]['key'];
 				$lastTime = $arrZw[$dateStr]['time'];
 				if($timeStr > $lastTime){ //当前时间大于 上次记录的时间 
@@ -256,7 +251,7 @@ foreach($entries as $key =>$value){
 			}
 		}
 		if($timeStr >= '18:30:00'){ // 晚上加班
-			if($arrWs[$dateStr]){
+			if(isset($arrWs[$dateStr]) && $arrWs[$dateStr]){
 				$lastKey = $arrWs[$dateStr]['key'];
 				$lastTime = $arrWs[$dateStr]['time'];
 				if($timeStr > $lastTime){ //当前时间大于 上次记录的时间 
@@ -288,7 +283,7 @@ foreach($entries as $key =>$value){
 $Qv = new Qv();
 $fileName = '上下班打卡_日报_';
 $qvData = [];
-foreach (glob("qv/*.xlsx") as $filename) {
+foreach (glob("../qv/*.xlsx") as $filename) {
  $qvData= array_merge($qvData,$Qv->getData($filename));
 }
 
@@ -364,13 +359,13 @@ foreach($mergedArray as $value){
 }
 usort($aFinal, function($a, $b) {
 	$aTime = $bTime = 0;
-	if($a['时间']){
+	if(isset($a['时间']) && $a['时间']){
 		$aTime = strtotime(str_replace('/', '-', explode(' ', $a['时间'])[0]));
 	}elseif($a['date']){
 		$aTime = DateTime::createFromFormat('Y年m月d日 H:i:s', $a['date'])->getTimestamp();
 	}
 
-	if($b['时间']){
+	if(isset($b['时间']) && $b['时间']){
 		$bTime = strtotime(str_replace('/', '-', explode(' ', $b['时间'])[0]));
 	}elseif($b['date']){
 		$bTime = DateTime::createFromFormat('Y年m月d日 H:i:s', $b['date'])->getTimestamp();
