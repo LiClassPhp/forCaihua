@@ -4,7 +4,7 @@ require 'vendor/autoload.php';
 use PhpOffice\PhpSpreadsheet\IOFactory;
 
 class Qv{
-	public function getData($inputFileName){
+	public function getOne($inputFileName){
 		if(!file_exists($inputFileName)) die('文件不存在: ' . $inputFileName);
 		$spreadsheet = IOFactory::load($inputFileName);// 加载Excel文件
 		$sheet = $spreadsheet->getActiveSheet();// 获取第一个工作表
@@ -58,14 +58,16 @@ class Qv{
 		}
 		return $merged;
 	}
+
+    public function getData(){
+        $qvData = [];
+        foreach (glob("../qv/*.xlsx") as $filename) {
+            $qvData= array_merge($qvData,self::getOne($filename));
+        }
+        return $qvData;
+    }
+
 }
-// $Qv = new Sum();
-// $fileName = '上下班打卡_日报_';
-// $data = [];
-// foreach (glob("qv/*.xlsx") as $filename) {
-//  $data[] = $Qv->getData($filename);
-// }
-// p($data);
 
 
 
