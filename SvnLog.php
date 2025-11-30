@@ -1,5 +1,5 @@
 <?php
-class Svn{
+class SvnLog{
     // 使用正则解析SVN日志信息 进行分组
    public function parse(){
         /*

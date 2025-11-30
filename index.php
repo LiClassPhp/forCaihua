@@ -1,7 +1,7 @@
 <?php
 require 'php.php';
 require 'Qv.php';
-require 'Svn.php';
+require 'SvnLog.php';
 
 class Analyzer{
 	public $workHours = 8;
@@ -190,7 +190,7 @@ class Analyzer{
     public function getExcelData(){
         $qvObj = new Qv();
         $qvData = $qvObj->getData();
-        $svnObj = new Svn();
+        $svnObj = new SvnLog();
         $svnData = $svnObj->getData();
         $data = self::merge($svnData,$qvData); //合并企业微信打卡记录和SVN代码提交记录
         $result = self::analyze($data);
