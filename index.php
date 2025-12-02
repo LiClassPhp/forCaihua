@@ -2,6 +2,7 @@
 require 'php.php';
 require 'Qv.php';
 require 'SvnLog.php';
+require 'NginxLog.php';
 
 class Analyzer{
 	public $workHours = 8;
@@ -14,16 +15,15 @@ class Analyzer{
 			if(!$dateTime){
 				continue; // 跳过格式不正确的记录
 			}
-			$overtimePay = 0;// 计算加班费用 (工作日1.5倍，周末2倍)
+			$overtimePay = $overtimeMinutes = 0;// 计算加班费用 (工作日1.5倍，周末2倍) && 加班时长
 			$minuteRate = $this->hourlyRate / 60; //分钟薪资
 			$dateStr = $dateTime->format('Y-m-d');
 			$timeStr = $dateTime->format('H:i:s');
 			$dayOfWeek = $dateTime->format('w'); // 0=周日, 1=周一, ..., 6=周六
 
 			// 判断是否是周末
-			$isWeekend = ($dayOfWeek == 0 || $dayOfWeek == 6);
-			$dayType = $isWeekend ? '周末' : '工作日';
-			$overtimeMinutes = 0; // 
+			$isWeekend = ($dayOfWeek == 0 || $dayOfWeek == 6); //目前只有周六加班
+			$dayType = $isWeekend ? '周六' : '工作日';
 			$overtimeDescription = ''; // 加班描述
 			if($isWeekend){
 				$overtimeMinutes = 480; //暂时写死
@@ -35,10 +35,10 @@ class Analyzer{
 					$interval = $start->diff($dateTime);
 					$minutes = $interval->h * 60 + $interval->i;
 					$overtimeMinutes += $minutes;
-					$minutes && $overtimeDescription .= "午休加班: {$minutes}分钟";
+					$minutes && $overtimeDescription .= "中午加班: {$minutes}分钟";
 				}
 
-				$qvEndMinutes = 0;
+				$qvEndMinutes = 0; //计算企业微信 加班时间
 				if(isset($entry['考勤概况-最晚']) && $entry['考勤概况-最晚']){
 					$start = new DateTime($dateStr . ' 18:30:00');
 					if(strpos($entry['考勤概况-最晚'],'次日')!== false){
@@ -55,13 +55,13 @@ class Analyzer{
 					$start = new DateTime($dateStr . ' 18:30:00');
 					$interval = $start->diff($dateTime);
 					$minutesSvn = $interval->h * 60 + $interval->i;
-					$minutes = $qvEndMinutes>$minutesSvn ? $qvEndMinutes : $minutesSvn; //打卡记录与SVN提交记录取最大值
+					$minutes = max($qvEndMinutes, $minutesSvn); //打卡记录与SVN提交记录取最大值
 					$overtimeMinutes += $minutes;
 
 					if(!empty($overtimeDescription)){
 						$overtimeDescription .= ", ";
 					}
-					$minutes && $overtimeDescription .= "晚间加班: {$minutes}分钟,";
+					$minutes && $overtimeDescription .= "晚上加班: {$minutes}分钟,";
 				}
 				$overtimePay = $overtimeMinutes * $minuteRate * 1.5; // 工作日1.5倍
 			}
@@ -113,18 +113,18 @@ class Analyzer{
 	}
 
     // 合并企业微信打卡记录和SVN代码提交记录
-    public function merge($svnData,$qvData){
+    public function mergeData($svnData,$qvData){
         $mergedArray = [];// 创建合并后的数组
         foreach ($svnData as $item) {// 处理 svnLog日志
             $standardDate = self::convertDateToStandard($item['date'], 'svn');
             if (!isset($mergedArray[$standardDate])) {
                 $mergedArray[$standardDate] = [
                     'date' => $standardDate,
-                    'arr1_data' => [],
-                    'arr2_data' => []
+                    'qv_data' => [],
+                    'svn_data' => []
                 ];
             }
-            $mergedArray[$standardDate]['arr2_data'][] = $item;
+            $mergedArray[$standardDate]['svn_data'][] = $item;
         }
 
         foreach ($qvData as $item) {// 处理企业微信打卡记录
@@ -132,18 +132,18 @@ class Analyzer{
             if (!isset($mergedArray[$standardDate])) {
                 $mergedArray[$standardDate] = [
                     'date' => $standardDate,
-                    'arr1_data' => [],
-                    'arr2_data' => []
+                    'qv_data' => [],
+                    'svn_data' => []
                 ];
             }
-            $mergedArray[$standardDate]['arr1_data'][] = $item;
+            $mergedArray[$standardDate]['qv_data'][] = $item;
         }
         // $mergedArray= ['2025-09-21' =>$mergedArray['2025-09-21']];
         // p($mergedArray);
         $aFinal = []; //最终数组
         foreach($mergedArray as $value){
-            foreach($value['arr2_data'] as $val){
-                $aFinal[] = array_merge($value['arr1_data'][0] ?? [],$val ?? []);//qv打卡只有一条 所以可以用0；
+            foreach($value['svn_data'] as $val){
+                $aFinal[] = array_merge($value['qv_data'][0] ?? [],$val ?? []);//qv打卡只有一条 所以可以用0；
             }
         }
         usort($aFinal, function($a, $b) { //排序
@@ -192,7 +192,9 @@ class Analyzer{
         $qvData = $qvObj->getData();
         $svnObj = new SvnLog();
         $svnData = $svnObj->getData();
-        $data = self::merge($svnData,$qvData); //合并企业微信打卡记录和SVN代码提交记录
+        $nginxObj = new NginxLog();
+        // $nginxData = $nginxObj->getData();
+        $data = self::mergeData($svnData,$qvData); //合并企业微信打卡记录和SVN代码提交记录
         $result = self::analyze($data);
         return $result;
     }

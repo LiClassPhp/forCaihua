@@ -44,7 +44,7 @@ class NginxLog{
 			if($ret = $this->isWork($timestamp)){
 				$Ymd = date('Ymd', $timestamp); //相同日期 相同加班区间(早 中 晚)合并在一起
 				$aData[$Ymd][$ret['name']][] = [
-					'orginTime' => $aStr[0],
+					'originTime' => $aStr[0],
 					'timestamp' => $timestamp,
 					'detail' => $detail,
 					'work' => $ret
@@ -177,5 +177,5 @@ class NginxLog{
 		return $results;
 	}
 }
-$obj = new NginxLog();
-$obj->fixByDelLog();
+// $obj = new NginxLog();
+// $obj->fixByDelLog();
