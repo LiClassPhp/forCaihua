@@ -26,7 +26,7 @@ class NginxLog extends Base
                 });
             }
         }
-        return self::analyze($nginxData);
+        return self::analyze($nginxData, '请求');
     }
 
     // 原始数据解析

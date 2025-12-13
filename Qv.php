@@ -66,7 +66,7 @@ class Qv extends base
     // 计算加班时长(周末/工作日)
     private function calcMinutes($Ymd, $name, $earliest = 0, $latest = 0)
     {
-        $isWeekday = self::isWeekday(str_replace('-', '', $Ymd));
+        $isWeekday = self::isWeekEnd(str_replace('-', '', $Ymd));
         if($name === '早'){
             // $earliest 可能是(未打卡/ --) 或者在早上忘记打卡 下午才打卡(20250614)
             if($isWeekday && str_contains($earliest, ':') && $earliest < '12:00'){

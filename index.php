@@ -4,21 +4,23 @@ require 'php.php';
 require 'Qv.php';
 require 'SvnLog.php';
 require 'NginxLog.php';
+require 'QvChat.php';
 
 class Analyzer extends Base
 {
     // 获取最终需要导出Excel的数据
     public function getExcelData()
     {
+        $qvChatData = (new QvChat())->getData();
         $qvData = (new Qv())->getData();
         $svnData = (new SvnLog())->getData();
         $nginxData = (new NginxLog())->getData();
-        $data = self::mergeData($svnData, $qvData, $nginxData); // 合并企微 SvnLog NginxLog
+        $data = self::mergeData($svnData, $qvData, $nginxData, $qvChatData); // 合并企微 SvnLog NginxLog 企微聊天记录
         return self::format($data);
     }
 
     // 合并企业微信打卡记录和SVN代码提交记录
-    private function mergeData($svnData, $qvData, $nginxData)
+    private function mergeData($svnData, $qvData, $nginxData, $qvChatData)
     {
         $mergedArray = [];// 创建合并后的数组
         foreach($qvData as $item){// 处理企业微信打卡记录
@@ -33,6 +35,10 @@ class Analyzer extends Base
             $standardDate = $item['Ymd'];
             $mergedArray[$standardDate]['nginx_data'] = $item;
         }
+        foreach($qvChatData as $item){// 处理企微聊天记录
+            $standardDate = $item['Ymd'];
+            $mergedArray[$standardDate]['qv_chat_data'] = $item;
+        }
         krsort($mergedArray);
         return $mergedArray;
     }
@@ -41,10 +47,11 @@ class Analyzer extends Base
     {
         $finalData = $arr = [];
         foreach($data as $Ymd => $item){
-            $isWeekday = $this->isWeekday($Ymd);
+            $isWeekday = $this->isWeekEnd($Ymd);
             $svnData = $item['svn_data'] ?? [];
             $nginxData = $item['nginx_data'] ?? [];
             $qvData = $item['qv_data'] ?? [];
+            $qvChatData = $item['qv_chat_data'] ?? [];
             $arr['date'] = $Ymd; // 将字符串转换为时间戳
             $timestamp = strtotime($Ymd);
             $weekdays = ['日', '一', '二', '三', '四', '五', '六'];//星期映射
@@ -60,10 +67,12 @@ class Analyzer extends Base
             $arr['nginx_最早提交时间'] = ($isWeekday && isset($nginxData['timestampEarliest'])) ? date('H:i:s', $nginxData['timestampEarliest']) : '/';
             $arr['nginx_最后提交时间'] = isset($nginxData['timestamp']) ? date('H:i:s', $nginxData['timestamp']) : '/';
             $arr['nginx_加班费'] = $nginxData['money'] ?? '/';
+            $arr['企业微信聊天_加班时长'] = $qvChatData['totalMinutes'] ?? '/';
+            $arr['企业微信聊天_加班说明'] = $qvChatData['remark'] ?? '/';
+            $arr['企业微信聊天_加班费用'] = $qvChatData['money'] ?? '/';
             $arr['打卡时间_上班'] = $qvData['考勤概况-最早'] ?? '/';
             $arr['打卡时间_下班'] = $qvData['考勤概况-最晚'] ?? '/';
-            $arr['企业微信聊天记录/加班视频最晚时间'] = '/'; //todo
-            $sum = self::calcSum($Ymd, $svnData, $nginxData, $qvData);
+            $sum = self::calcSum($Ymd, $svnData, $nginxData, $qvData, $qvChatData);
             $arr = array_merge($arr, $sum);
             $arr['备注'] = '';
             $finalData[] = $arr;
@@ -73,7 +82,7 @@ class Analyzer extends Base
     }
 
     // 计算最终加班时长 加班说明 加班费用
-    private function calcSum($Ymd, $svnData, $nginxData, $qvData)
+    private function calcSum($Ymd, $svnData, $nginxData, $qvData, $qvChatData)
     {
         $totalMinutes = 0;
         $remark = '';
@@ -88,14 +97,19 @@ class Analyzer extends Base
                 $arr[$type]['minutes'][] = $val['minutes'];
             }
         }
-        if(self::isWeekday($Ymd)){
+        if(isset($qvChatData['detail']) && $qvChatData['detail']){
+            foreach($qvChatData['detail'] as $type => $val){
+                $arr[$type]['minutes'][] = $val['minutes'];
+            }
+        }
+        if(self::isWeekEnd($Ymd)){
             $arr['早']['minutes'][] = $qvData['早上加班时长'] ?? 0;
             $arr['晚']['minutes'][] = $qvData['晚上加班时长'] ?? 0;
 
         }
         foreach($arr as $type => $val){
-            $minutes = max($val['minutes']);
-            $totalMinutes += $minutes;
+            $minutes = max($val['minutes']);// 取加班最大值
+            $totalMinutes += $minutes; //当天累计加班时长(分钟)
             $minutes && $remark .= $type . '(' . $minutes . '分钟) '; // (早/中/晚)加班分钟数
 
         }
@@ -106,10 +120,9 @@ class Analyzer extends Base
     }
 }
 
-$result = (new Analyzer())->getExcelData();// 执行分析加班时长
-// $data[] = ['日期', '提交备注', '提交文件', '最后一次代码提交日期', '加班时长', '加班时长说明', '加班费用', '日期类型', '打卡-时间', '打卡-考勤概况-最早', '打卡-考勤概况-最晚', '打卡-时间考勤概况-实际工作时长(小时)', '打卡-考勤概况-考勤结果', '打卡-下班1-打卡时间', '打卡-下班1-打卡状态', '打卡-打卡时间记录'];
-$data[] = ['日期', '星期', 'svn提交日志', 'svn提交日志', 'svn提交日志', 'svn提交日志', 'svn提交日志', 'nginx日志', 'nginx日志', 'nginx日志', 'nginx日志', 'nginx日志', '企业微信', '企业微信', '企业微信聊天记录/加班视频最晚时间', '最终汇总', '最终汇总', '最终汇总', '备注'];
-$data[] = ['日期', '星期', '加班时长', '加班时长说明', '最早提交时间(周末)', '最晚提交时间', '加班费', '加班时长', '加班时长说明', '最早提交时间(周末)', '最晚提交时间', '加班费', '打卡时间-上班', '打卡时间-下班', '企业微信聊天记录/加班视频最晚时间', '加班时长', '加班时长说明', '加班费', '备注'];
+$result = (new Analyzer())->getExcelData();// 获取Excel所需数据
+$data[] = ['日期', '星期', 'svn提交日志', 'svn提交日志', 'svn提交日志', 'svn提交日志', 'svn提交日志', 'nginx日志', 'nginx日志', 'nginx日志', 'nginx日志', 'nginx日志', '企业微信聊天截图', '企业微信聊天截图', '企业微信聊天截图', '企业微信打卡', '企业微信打卡', '最终汇总', '最终汇总', '最终汇总', '备注'];
+$data[] = ['日期', '星期', '加班时长', '加班时长说明', '最早提交时间(周末)', '最晚提交时间', '加班费', '加班时长', '加班时长说明', '最早提交时间(周末)', '最晚提交时间', '加班费', '加班时长', '加班时长说明', '加班费', '上班时间', '下班时间', '加班时长', '加班时长说明', '加班费', '备注'];
 foreach($result as $value){
     $data[] = array_values($value);
 }

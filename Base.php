@@ -1,4 +1,5 @@
 <?php
+require 'ChineseHolidayCalculator.php';
 
 class Base
 {
@@ -33,8 +34,7 @@ class Base
 
     private function map($timestamp)
     {
-        $weekdayNum = date('w', $timestamp);
-        if(in_array($weekdayNum, [0, 6])){
+        if(self::isWeekEnd(date('Ymd', $timestamp), 1)){
             $aMap['周末'] = [ // 定义时间段 如果是周末 早: 最早工作时间-13.00为加班时长  晚: 14:00到最晚工作时间为加班时长
                 'morning' => [
                     'name' => '早',
@@ -71,7 +71,7 @@ class Base
         return $aMap;
     }
 
-    public function analyze($data)
+    public function analyze($data, $typeName = '提交')
     {
         $ret = [];
         foreach($data as $Ymd => $value){
@@ -84,7 +84,7 @@ class Base
                 $aTimestamp = array_merge($aTimestamp, array_column($val, 'timestamp')); //取val的时间戳 而非arr里的时间戳 可以获得当天工作最早时间
                 $detail[$type] = ['minutes' => $minutes, 'money' => self::calcMoney($Ymd, $minutes)]; // 早中晚各加班时长 用于与svn对比取最大值
                 $totalMinutes += $minutes; // 当天合计总共加班时长
-                $remark .= $type . '(' . $minutes . '分钟,提交' . count($val) . '次) '; // (早/中/晚)加班分钟数 和 (svn提交/Nginx请求)次数
+                $remark .= $type . '(' . $minutes . '分钟,' . count($val) . '个' . $typeName . ') '; // (早/中/晚)加班分钟数 和 (svn提交/Nginx请求)次数
             }
             $ret[] = [
                 'timestamp' => max($aTimestamp),// 当天工作最晚时间
@@ -104,15 +104,18 @@ class Base
     protected function calcMoney($Ymd, $minutes)
     {
         $minuteRate = $this->hourlyRate / 60;
-        return $minutes * $minuteRate * (self::isWeekday($Ymd) ? 2 : 1.5);
+        return $minutes * $minuteRate * (self::isWeekEnd($Ymd) ? 2 : 1.5);
     }
 
-    public function isWeekday($Ymd)
+    public function isWeekEnd($Ymd, $flag = 0)
     {
-        if(!$Ymd){
-            p(111);
-        }
         $weekdayNum = DateTime::createFromFormat('Ymd', $Ymd)->format('w');
-        return in_array($weekdayNum, [0, 6]);
+        if(!in_array($weekdayNum, [0, 6])) return false; //非周末直接返回false
+        if($flag){ //节假日放假 导致周末调休 算作工作日(用于计算加班区间)   但加班依旧按照周末双倍工资来算
+            $timestamp = strtotime($Ymd);
+            if($timestamp === false) p('日期格式有误,请检查' . $Ymd);
+            if((new ChineseHolidayCalculator())->isMakeupWorkday(date('Y-m-d', $timestamp))) return false; //工作日调休
+        }
+        return true;
     }
 }
