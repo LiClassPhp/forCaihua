@@ -9,8 +9,8 @@ class NginxLog extends Base
         foreach($data as $d){
             if($ret = $this->isWork($d['timestamp'])){
                 $Ymd = date('Ymd', $d['timestamp']); // 相同日期 相同加班区间(早 中 晚)合并在一起
-                $d['work'] = $ret;
-                $nginxData[$Ymd][$ret['name']][] = $d;
+                $d = array_merge($d, $ret); // 合并
+                $nginxData[$Ymd][$d['name']][] = $d;
             }
         }
         // 排序
@@ -24,18 +24,15 @@ class NginxLog extends Base
                     if($valueA === $valueB) return 0;
                     return ($valueA > $valueB) ? -1 : 1; // 降序排列
                 });
-                // $val = current($val); //是否只保留一条数据(analyze会处理 保留一条会解析异常)
             }
         }
         return self::analyze($nginxData);
     }
 
-    /** 原始数据解析
-     * @return array
-     */
+    // 原始数据解析
     private function parse()
     {
-        ini_set('memory_limit', '512M');
+        ini_set('memory_limit', '5120M');
         $logStr = $this->logStr();
         $aLogStr = explode("\n", $logStr);
         $data = $filterForRepeat = [];// 同一时间(精确到分)只保留一条
@@ -52,6 +49,7 @@ class NginxLog extends Base
             $data[] = [
                 'originTime' => $aStr[0],
                 'timestamp' => $timestamp,
+                'Ymd' => date('Ymd H:i:s', $timestamp),
                 'uid' => $detail['ch_uid'],
                 // 'detail' => $detail,
             ];
@@ -125,9 +123,8 @@ class NginxLog extends Base
         $logText = '[9/Oct/2023:10:30:48 +0000] 192.168.56.1 200 0.073 7361 "POST /apps/zt/kemu/kemu.config?PHPSESSID=KQCjKXPEz3RWdZQLqJq5LHRKLd1LIrbF&ch_uid=15472&ch_id=23625&ch_Ym=202308&ch_kjzd=99&scmid=23&iframe=scm&ch_key=u4k7%2FtUxMYB4FKgW86s%2B%2BqTe9D2HM3zO8ujulWhSYVwEkaFhDubfYetXLrteg2VF&ch_newui=1&ch_adm=1&ch_mid=1 HTTP/1.1" "http://localhost:8083/" 172.18.0.5:9000 - "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36" /data/wwwroot/72mao/fms/api.php 
 [09/Oct/2023:04:01:09 +0000] 192.168.56.1 200 0.129 856 "POST /apps/zt/zichan/zichanNew.select?PHPSESSID=uBnD6EyO2aK1MJYC84I0K5hNfMrHETyF&ch_uid=15472&ch_id=23625&ch_Ym=202308&ch_kjzd=99&ch_newui=1&ch_adm=1 HTTP/1.1" "http://fms.vm-72mao.com/zichan?adm=1&id=23625" 172.18.0.5:9000 - "-" "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36" /data/wwwroot/72mao/fms/api.php 
 ';
-
         $logText = '';
-        foreach(glob("../nginx/scm.vm-72mao.com.log") as $filename){          // 获取所有SVN文件
+        foreach(glob("../nginx/*.log") as $filename){          // 获取所有SVN文件
             $logText .= file_get_contents($filename) . "\n";                  // 字符串合并
         }
 
