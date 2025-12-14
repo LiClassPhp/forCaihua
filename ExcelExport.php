@@ -112,15 +112,15 @@ class ExcelExport
             'A2' => '日期(年月日)',
             'B2' => '星期',
             // svnLog
-            'C2' => '加班时长(分钟)',
-            'D2' => '加班时长说明',
-            'E2' => '最早提交时间(周末)',
-            'F2' => '最晚提交时间',
+            'C2' => '最早提交时间(周末)',
+            'D2' => '最晚提交时间',
+            'E2' => '加班时长(分钟)',
+            'F2' => '加班时长说明',
             // nginxLog
-            'G2' => '加班时长(分钟)',
-            'H2' => '加班时长说明',
-            'I2' => '最早提交时间(周末)',
-            'J2' => '最晚提交时间',
+            'G2' => '最早提交时间(周末)',
+            'H2' => '最晚提交时间',
+            'I2' => '加班时长(分钟)',
+            'J2' => '加班时长说明',
             // qvChat
             'K2' => '加班时长(分钟)',
             'L2' => '加班时长说明',
@@ -243,31 +243,27 @@ class ExcelExport
      */
     private function setColumnStyles()
     {
-        // 设置列宽
         $this->sheet->getColumnDimension('A')->setWidth(12); // 日期
         $this->sheet->getColumnDimension('B')->setWidth(10); // 星期
-        $this->sheet->getColumnDimension('C')->setWidth(12); // svn-加班时长
-        $this->sheet->getColumnDimension('D')->setWidth(20); // svn-说明
-        $this->sheet->getColumnDimension('E')->setWidth(18); // svn-最早时间
-        $this->sheet->getColumnDimension('F')->setWidth(15); // svn-最晚时间
-        $this->sheet->getColumnDimension('G')->setWidth(12); // nginx-加班时长
-        $this->sheet->getColumnDimension('H')->setWidth(20); // nginx-说明
-        $this->sheet->getColumnDimension('I')->setWidth(18); // nginx-最早时间
-        $this->sheet->getColumnDimension('J')->setWidth(15); // nginx-最晚时间
-        $this->sheet->getColumnDimension('K')->setWidth(12); // 微信聊天记录-加班时长
-        $this->sheet->getColumnDimension('L')->setWidth(20); // 微信聊天记录-说明
+        $this->sheet->getColumnDimension('C')->setWidth(18); // svn-最早时间
+        $this->sheet->getColumnDimension('D')->setWidth(15); // svn-最晚时间
+        $this->sheet->getColumnDimension('E')->setWidth(20); // svn-加班时长
+        $this->sheet->getColumnDimension('F')->setWidth(35); // svn-加班说明
+        $this->sheet->getColumnDimension('G')->setWidth(18); // nginx-最早时间
+        $this->sheet->getColumnDimension('H')->setWidth(15); // nginx-最晚时间
+        $this->sheet->getColumnDimension('I')->setWidth(20); // nginx-加班时长
+        $this->sheet->getColumnDimension('J')->setWidth(35); // nginx-加班说明
+        $this->sheet->getColumnDimension('K')->setWidth(20); // 微信聊天记录-加班时长
+        $this->sheet->getColumnDimension('L')->setWidth(35); // 微信聊天记录-说明
         $this->sheet->getColumnDimension('M')->setWidth(12); // 打卡-上班时间
         $this->sheet->getColumnDimension('N')->setWidth(12); // 打卡-下班时间
-        $this->sheet->getColumnDimension('O')->setWidth(12); // 汇总-加班时长
-        $this->sheet->getColumnDimension('P')->setWidth(20); // 汇总-说明
+        $this->sheet->getColumnDimension('O')->setWidth(20); // 汇总-加班时长
+        $this->sheet->getColumnDimension('P')->setWidth(30); // 汇总-说明
         $this->sheet->getColumnDimension('Q')->setWidth(12); // 汇总-加班费
         $this->sheet->getColumnDimension('R')->setWidth(25); // 备注
 
-        // 设置工作表的标题
-        $this->sheet->setTitle('加班记录表');
-
-        // 冻结前两行表头
-        $this->sheet->freezePane('A3');
+        $this->sheet->setTitle('加班记录表');// 设置工作表的标题
+        $this->sheet->freezePane('A3');// 冻结前两行表头
     }
 
     /**

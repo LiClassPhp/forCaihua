@@ -47,6 +47,7 @@ class Analyzer extends Base
     private function format($data)
     {
         $finalData = $arr = [];
+        $weekdays = ['日', '一', '二', '三', '四', '五', '六'];//星期映射
         foreach($data as $Ymd => $item){
             $isWeekday = $this->isWeekEnd($Ymd);
             $svnData = $item['svn_data'] ?? [];
@@ -55,22 +56,18 @@ class Analyzer extends Base
             $qvChatData = $item['qv_chat_data'] ?? [];
             $arr['date'] = $Ymd; // 将字符串转换为时间戳
             $timestamp = strtotime($Ymd);
-            $weekdays = ['日', '一', '二', '三', '四', '五', '六'];//星期映射
             $weekdayIndex = date('w', $timestamp);// 获取星期索引（0=星期日，1=星期一，...，6=星期六）
             $arr['星期'] = "星期" . $weekdays[$weekdayIndex];
-            $arr['svn_加班时长'] = $svnData['totalMinutes'] ?? '/';
-            $arr['svn_加班时长说明'] = $svnData['remark'] ?? '/';
             $arr['svn_最早提交时间'] = ($isWeekday && isset($svnData['timestampEarliest'])) ? date('H:i:s', $svnData['timestampEarliest']) : '/';
             $arr['svn_最后提交时间'] = isset($svnData['timestamp']) ? date('H:i:s', $svnData['timestamp']) : '/';
-            // $arr['svn_加班费'] = $svnData['money'] ?? '/';
-            $arr['nginx_加班时长'] = $nginxData['totalMinutes'] ?? '/';
-            $arr['nginx_加班时长说明'] = $nginxData['remark'] ?? '/';
+            $arr['svn_加班时长'] = $svnData['totalMinutes'] ?? '/';
+            $arr['svn_加班时长说明'] = $svnData['remark'] ?? '/';
             $arr['nginx_最早提交时间'] = ($isWeekday && isset($nginxData['timestampEarliest'])) ? date('H:i:s', $nginxData['timestampEarliest']) : '/';
             $arr['nginx_最后提交时间'] = isset($nginxData['timestamp']) ? date('H:i:s', $nginxData['timestamp']) : '/';
-            // $arr['nginx_加班费'] = $nginxData['money'] ?? '/';
+            $arr['nginx_加班时长'] = $nginxData['totalMinutes'] ?? '/';
+            $arr['nginx_加班时长说明'] = $nginxData['remark'] ?? '/';
             $arr['企业微信聊天_加班时长'] = $qvChatData['totalMinutes'] ?? '/';
             $arr['企业微信聊天_加班说明'] = $qvChatData['remark'] ?? '/';
-            // $arr['企业微信聊天_加班费用'] = $qvChatData['money'] ?? '/';
             $arr['打卡时间_上班'] = $qvData['考勤概况-最早'] ?? '/';
             $arr['打卡时间_下班'] = $qvData['考勤概况-最晚'] ?? '/';
             $sum = self::calcSum($Ymd, $svnData, $nginxData, $qvData, $qvChatData);
@@ -125,5 +122,6 @@ $result = (new Analyzer())->getExcelData();// 获取Excel所需数据
 foreach($result as $value){
     $data[] = array_values($value);
 }
+// $data = array_slice($data, 0, 3);
 $filename = (new ExcelExport())->createExcel($data, '加班记录表.xlsx');
 echo "Excel 文件已生成到: " . realpath($filename);
