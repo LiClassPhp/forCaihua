@@ -5,6 +5,7 @@ require 'Qv.php';
 require 'SvnLog.php';
 require 'NginxLog.php';
 require 'QvChat.php';
+require 'ExcelExport.php';
 
 class Analyzer extends Base
 {
@@ -121,17 +122,9 @@ class Analyzer extends Base
 }
 
 $result = (new Analyzer())->getExcelData();// 获取Excel所需数据
-$data[] = ['日期', '星期', 'svn提交日志', 'svn提交日志', 'svn提交日志', 'svn提交日志', 'svn提交日志', 'nginx日志', 'nginx日志', 'nginx日志', 'nginx日志', 'nginx日志', '企业微信聊天截图', '企业微信聊天截图', '企业微信聊天截图', '企业微信打卡', '企业微信打卡', '最终汇总', '最终汇总', '最终汇总', '备注'];
-$data[] = ['日期', '星期', '加班时长', '加班时长说明', '最早提交时间(周末)', '最晚提交时间', '加班费', '加班时长', '加班时长说明', '最早提交时间(周末)', '最晚提交时间', '加班费', '加班时长', '加班时长说明', '加班费', '上班时间', '下班时间', '加班时长', '加班时长说明', '加班费', '备注'];
 foreach($result as $value){
     $data[] = array_values($value);
 }
-
-$filePath = 'export_data.csv';// 文件保存路径
-$file = fopen($filePath, 'w');// 打开文件句柄
-fwrite($file, chr(0xEF) . chr(0xBB) . chr(0xBF));// 写入BOM头解决中文乱码
-foreach($data as $row){
-    fputcsv($file, $row);// 写入数据
-}
-fclose($file);// 关闭文件
-echo "CSV文件已生成到: " . realpath($filePath);
+$filename = (new ExcelExport())->createExcel($data, '加班记录表.xlsx');
+echo "Excel 文件已生成到: " . realpath($filename);
+p(111);
