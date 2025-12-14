@@ -99,10 +99,7 @@ class ExcelExport
         ];
 
         $this->sheet->getStyle('A1:U1')->applyFromArray($headerStyle);
-
-        // 设置行高
-        $this->sheet->getRowDimension(1)->setRowHeight(30);
-
+        $this->sheet->getRowDimension(1)->setRowHeight(30);// 设置行高
         $this->currentRow = 2;
     }
 
