@@ -6,6 +6,7 @@ require 'SvnLog.php';
 require 'NginxLog.php';
 require 'QvChat.php';
 require 'Video.php';
+require 'Meeting.php';
 require 'ExcelExport.php';
 
 class Analyzer extends Base
@@ -18,8 +19,8 @@ class Analyzer extends Base
         $svnData = (new SvnLog())->getData();
         $nginxData = (new NginxLog())->getData();
         $videoData = (new Video())->getData();
-        $data = self::mergeData($svnData, $qvData, $nginxData, $qvChatData, $videoData); // 合并企微 SvnLog NginxLog 企微聊天记录
-        return self::format($data);
+        $data = $this->mergeData($svnData, $qvData, $nginxData, $qvChatData, $videoData); // 合并企微 SvnLog NginxLog 企微聊天记录
+        return $this->format($data);
     }
 
     // 合并企业微信打卡记录和SVN代码提交记录
@@ -79,13 +80,20 @@ class Analyzer extends Base
             $arr['下班视频记录_加班说明'] = $videoData['remark'] ?? '/';
             $arr['打卡时间_上班'] = $qvData['考勤概况-最早'] ?? '/';
             $arr['打卡时间_下班'] = $qvData['考勤概况-最晚'] ?? '/';
-            $sum = self::calcSum($Ymd, $svnData, $nginxData, $qvData, $qvChatData);
+            $sum = $this->calcSum($Ymd, $svnData, $nginxData, $qvData, $qvChatData);
             $arr = array_merge($arr, $sum);
-            $arr['备注'] = '';
+            $arr['备注'] = $this->beiZhu($Ymd);
             $finalData[] = $arr;
         }
         return $finalData;
+    }
 
+    // 获取备注 目前只有一个 是否是培训
+    private function beiZhu($Ymd)
+    {
+
+        $meetingData = (new Meeting())->getData();
+        return isset($meetingData[$Ymd]) ? '当天有开会/培训(截图' . $meetingData[$Ymd] . '张)' : '';
     }
 
     // 计算最终加班时长 加班说明 加班费用
@@ -109,7 +117,7 @@ class Analyzer extends Base
                 $arr[$type]['minutes'][] = $val['minutes'];
             }
         }
-        if(self::isWeekEnd($Ymd)){
+        if($this->isWeekEnd($Ymd)){ //如果是周末的话 企微的打卡时间一并计算
             $arr['早']['minutes'][] = $qvData['早上加班时长'] ?? 0;
             $arr['晚']['minutes'][] = $qvData['晚上加班时长'] ?? 0;
 
@@ -122,7 +130,7 @@ class Analyzer extends Base
         }
         $sum['sum_加班时长'] = $totalMinutes;
         $sum['sum_加班时长说明'] = $remark;
-        $sum['sum_加班费'] = self::calcMoney($Ymd, $totalMinutes);
+        $sum['sum_加班费'] = $this->calcMoney($Ymd, $totalMinutes);
         return $sum;
     }
 }

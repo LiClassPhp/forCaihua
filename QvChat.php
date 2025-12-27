@@ -16,6 +16,7 @@ class QvChat extends base
     public function getData()
     {
         $data = self::getTimesList();
+        $svnData = [];
         foreach($data as $d){
             $timestamp = $d['timestamp'];
             if($ret = $this->isWork($timestamp)){

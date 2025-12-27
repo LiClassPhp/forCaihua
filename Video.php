@@ -17,6 +17,7 @@ class Video extends base
         foreach($aTime as $date){
             $data[] = ['timestamp' => strtotime($date)];
         }
+        $svnData = [];
         foreach($data as $d){
             $timestamp = $d['timestamp'];
             if($ret = $this->isWork($timestamp)){
