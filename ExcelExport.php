@@ -58,9 +58,10 @@ class ExcelExport
             'C1' => 'svn提交日志',
             'G1' => 'nginx日志',
             'K1' => '企业微信聊天截图',
-            'M1' => '企业微信打卡',
-            'O1' => '最终汇总',
-            'R1' => '备注'
+            'M1' => '下班视频记录',
+            'O1' => '企业微信打卡',
+            'Q1' => '最终汇总',
+            'T1' => '备注'
         ];
 
         // 写入表头文字
@@ -72,8 +73,9 @@ class ExcelExport
         $this->sheet->mergeCells('C1:F1'); // svn提交日志（4列）
         $this->sheet->mergeCells('G1:J1'); // nginx日志（4列）
         $this->sheet->mergeCells('K1:L1'); // 企业微信聊天截图（2列）
-        $this->sheet->mergeCells('M1:N1'); // 企业微信打卡（2列）
-        $this->sheet->mergeCells('O1:Q1'); // 最终汇总（3列）
+        $this->sheet->mergeCells('M1:N1'); // 下班视频记录（2列）
+        $this->sheet->mergeCells('O1:P1'); // 企业微信打卡（2列）
+        $this->sheet->mergeCells('Q1:S1'); // 最终汇总（3列）
 
         // 设置第一个表头的样式
         $headerStyle = [
@@ -98,7 +100,7 @@ class ExcelExport
             ]
         ];
 
-        $this->sheet->getStyle('A1:R1')->applyFromArray($headerStyle);
+        $this->sheet->getStyle('A1:T1')->applyFromArray($headerStyle);
         $this->sheet->getRowDimension(1)->setRowHeight(30);// 设置行高
         $this->currentRow = 2;
     }
@@ -124,14 +126,18 @@ class ExcelExport
             // qvChat
             'K2' => '加班时长(分钟)',
             'L2' => '加班时长说明',
+            // video
+            'M2' => '加班时长(分钟)',
+            'N2' => '加班时长说明',
             // qv
-            'M2' => '上班时间',
-            'N2' => '下班时间',
+            'O2' => '上班时间',
+            'P2' => '下班时间',
             // sum
-            'O2' => '加班时长(分钟)',
-            'P2' => '加班时长说明',
-            'Q2' => '加班费',
-            'R2' => '备注'
+            'Q2' => '加班时长(分钟)',
+            'R2' => '加班时长说明',
+            'S2' => '加班费',
+            // 备注
+            'T2' => '备注'
         ];
 
         // 写入列标题
@@ -160,7 +166,7 @@ class ExcelExport
                 ]
             ]
         ];
-        $this->sheet->getStyle('A2:R2')->applyFromArray($subHeaderStyle);
+        $this->sheet->getStyle('A2:T2')->applyFromArray($subHeaderStyle);
         // 设置行高
         $this->sheet->getRowDimension(2)->setRowHeight(25);
         $this->currentRow = 3;
@@ -197,9 +203,10 @@ class ExcelExport
                     'C:F' => 'FFF2CC', // svn提交日志 - 浅黄色
                     'G:J' => 'E2EFDA', // nginx日志 - 浅绿色
                     'K:L' => 'FCE4D6', // 企业微信聊天截图 - 浅橙色
-                    'M:N' => 'D9E1F2', // 企业微信打卡 - 浅紫色
-                    'O:Q' => 'FFE6E6', // 最终汇总 - 浅粉色
-                    'R' => 'F2F2F2'  // 备注 - 灰色
+                    'M:N' => 'FFFFFF', // 下班视频记录 - 浅橙色
+                    'O:P' => 'D9E1F2', // 企业微信打卡 - 浅紫色
+                    'Q:S' => 'FFE6E6', // 最终汇总 - 浅粉色
+                    'T' => 'F2F2F2'  // 备注 - 灰色
                 ];
                 $colIndex = ord($col) - ord('A') + 1; // A=1, B=2, ...// 判断当前列属于哪个范围
                 if($colIndex <= 2){
@@ -212,10 +219,12 @@ class ExcelExport
                     $range = 'K:L';
                 }elseif($colIndex <= 14){
                     $range = 'M:N';
-                }elseif($colIndex <= 17){
-                    $range = 'O:Q';
+                }elseif($colIndex <= 16){
+                    $range = 'O:P';
+                }elseif($colIndex <= 19){
+                    $range = 'Q:S';
                 }else{
-                    $range = 'R';
+                    $range = 'T';
                 }
 
                 if(isset($bgColors[$range])){
@@ -226,7 +235,7 @@ class ExcelExport
                 }
                 $this->sheet->getStyle($cell)->applyFromArray($dataStyle);
                 // 特别处理加班费列，设置为货币格式
-                if($col == 'Q'){
+                if($col == 'S'){
                     $this->sheet->getStyle($cell)->getNumberFormat()
                         ->setFormatCode('#,##0.00');
                 }
@@ -255,12 +264,14 @@ class ExcelExport
         $this->sheet->getColumnDimension('J')->setWidth(35); // nginx-加班说明
         $this->sheet->getColumnDimension('K')->setWidth(20); // 微信聊天记录-加班时长
         $this->sheet->getColumnDimension('L')->setWidth(35); // 微信聊天记录-说明
-        $this->sheet->getColumnDimension('M')->setWidth(12); // 打卡-上班时间
-        $this->sheet->getColumnDimension('N')->setWidth(12); // 打卡-下班时间
-        $this->sheet->getColumnDimension('O')->setWidth(20); // 汇总-加班时长
-        $this->sheet->getColumnDimension('P')->setWidth(30); // 汇总-说明
-        $this->sheet->getColumnDimension('Q')->setWidth(12); // 汇总-加班费
-        $this->sheet->getColumnDimension('R')->setWidth(25); // 备注
+        $this->sheet->getColumnDimension('M')->setWidth(20); // 下班视频记录-加班时长
+        $this->sheet->getColumnDimension('N')->setWidth(35); // 下班视频记录-说明
+        $this->sheet->getColumnDimension('O')->setWidth(12); // 打卡-上班时间
+        $this->sheet->getColumnDimension('P')->setWidth(12); // 打卡-下班时间
+        $this->sheet->getColumnDimension('Q')->setWidth(20); // 汇总-加班时长
+        $this->sheet->getColumnDimension('R')->setWidth(30); // 汇总-说明
+        $this->sheet->getColumnDimension('S')->setWidth(12); // 汇总-加班费
+        $this->sheet->getColumnDimension('T')->setWidth(25); // 备注
 
         $this->sheet->setTitle('加班记录表');// 设置工作表的标题
         $this->sheet->freezePane('A3');// 冻结前两行表头

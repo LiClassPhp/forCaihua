@@ -5,6 +5,7 @@ require 'Qv.php';
 require 'SvnLog.php';
 require 'NginxLog.php';
 require 'QvChat.php';
+require 'Video.php';
 require 'ExcelExport.php';
 
 class Analyzer extends Base
@@ -16,12 +17,13 @@ class Analyzer extends Base
         $qvData = (new Qv())->getData();
         $svnData = (new SvnLog())->getData();
         $nginxData = (new NginxLog())->getData();
-        $data = self::mergeData($svnData, $qvData, $nginxData, $qvChatData); // 合并企微 SvnLog NginxLog 企微聊天记录
+        $videoData = (new Video())->getData();
+        $data = self::mergeData($svnData, $qvData, $nginxData, $qvChatData, $videoData); // 合并企微 SvnLog NginxLog 企微聊天记录
         return self::format($data);
     }
 
     // 合并企业微信打卡记录和SVN代码提交记录
-    private function mergeData($svnData, $qvData, $nginxData, $qvChatData)
+    private function mergeData($svnData, $qvData, $nginxData, $qvChatData, $videoData)
     {
         $mergedArray = [];// 创建合并后的数组
         foreach($qvData as $item){// 处理企业微信打卡记录
@@ -40,6 +42,10 @@ class Analyzer extends Base
             $standardDate = $item['Ymd'];
             $mergedArray[$standardDate]['qv_chat_data'] = $item;
         }
+        foreach($videoData as $item){// 处理企微聊天记录
+            $standardDate = $item['Ymd'];
+            $mergedArray[$standardDate]['video_data'] = $item;
+        }
         krsort($mergedArray);
         return $mergedArray;
     }
@@ -54,6 +60,7 @@ class Analyzer extends Base
             $nginxData = $item['nginx_data'] ?? [];
             $qvData = $item['qv_data'] ?? [];
             $qvChatData = $item['qv_chat_data'] ?? [];
+            $videoData = $item['video_data'] ?? [];
             $arr['date'] = $Ymd; // 将字符串转换为时间戳
             $timestamp = strtotime($Ymd);
             $weekdayIndex = date('w', $timestamp);// 获取星期索引（0=星期日，1=星期一，...，6=星期六）
@@ -68,6 +75,8 @@ class Analyzer extends Base
             $arr['nginx_加班时长说明'] = $nginxData['remark'] ?? '/';
             $arr['企业微信聊天_加班时长'] = $qvChatData['totalMinutes'] ?? '/';
             $arr['企业微信聊天_加班说明'] = $qvChatData['remark'] ?? '/';
+            $arr['下班视频记录_加班时长'] = $videoData['totalMinutes'] ?? '/';
+            $arr['下班视频记录_加班说明'] = $videoData['remark'] ?? '/';
             $arr['打卡时间_上班'] = $qvData['考勤概况-最早'] ?? '/';
             $arr['打卡时间_下班'] = $qvData['考勤概况-最晚'] ?? '/';
             $sum = self::calcSum($Ymd, $svnData, $nginxData, $qvData, $qvChatData);
@@ -119,6 +128,7 @@ class Analyzer extends Base
 }
 
 $result = (new Analyzer())->getExcelData();// 获取Excel所需数据
+
 foreach($result as $value){
     $data[] = array_values($value);
 }
