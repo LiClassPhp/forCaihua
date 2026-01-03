@@ -361,4 +361,4 @@ echo "完成！日志已保存到 $base_path"
 
 #  ./svnlog.sh -s 2023-04-01 -e 2025-11-13 -p /Users/liclass/Documents/财华维权文件/svn/svn_shell -r /Users/liclass/Documents/wwwroot
 
-#  ./html/caihua/code/svnlog.sh -s 2025-12-10 -e 2025-12-26 -p /Users/liclass/Documents/财华维权文件/svn/svn_shell -r /Users/liclass/Documents/wwwroot
+#  ./html/caihua/code/svnlog.sh -s 2025-12-10 -e 2025-12-27 -p /Users/liclass/Documents/财华维权文件/svn/svn_shell -r /Users/liclass/Documents/wwwroot

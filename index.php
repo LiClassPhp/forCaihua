@@ -9,6 +9,7 @@ require 'Video.php';
 require 'Meeting.php';
 require 'ExcelExport.php';
 
+// http://localhost/caihua/code/index.php (浏览器调用URL)
 class Analyzer extends Base
 {
     // 获取最终需要导出Excel的数据
@@ -91,7 +92,6 @@ class Analyzer extends Base
     // 获取备注 目前只有一个 是否是培训
     private function beiZhu($Ymd)
     {
-
         $meetingData = (new Meeting())->getData();
         return isset($meetingData[$Ymd]) ? '当天有开会/培训(截图' . $meetingData[$Ymd] . '张)' : '';
     }
@@ -136,10 +136,8 @@ class Analyzer extends Base
 }
 
 $result = (new Analyzer())->getExcelData();// 获取Excel所需数据
-
-foreach($result as $value){
-    $data[] = array_values($value);
-}
-// $data = array_slice($data, 0, 3);
-$filename = (new ExcelExport())->createExcel($data, '加班记录表.xlsx');
+// $data = array_slice($result, 0, 30);
+unset($result[0]); //todo 此处临时处理 20251227是周六 去公司录屏 不算加班
+$result = array_values($result);
+$filename = (new ExcelExport())->createExcel($result, '加班记录表.xlsx');
 echo "Excel 文件已生成到: " . realpath($filename);

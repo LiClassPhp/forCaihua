@@ -107,7 +107,12 @@ class Base
         return $minutes * $minuteRate * (self::isWeekEnd($Ymd) ? 2 : 1.5);
     }
 
-    public function isWeekEnd($Ymd, $flag = 0)
+    /**
+     * @param $Ymd //日期
+     * @param $flag //1 严格校验 节假日放假 导致周末调休 算作工作日
+     * @return bool
+     */
+    public static function isWeekEnd($Ymd, $flag = 0)
     {
         $weekdayNum = DateTime::createFromFormat('Ymd', $Ymd)->format('w');
         if(!in_array($weekdayNum, [0, 6])) return false; //非周末直接返回false
