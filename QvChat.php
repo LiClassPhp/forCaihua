@@ -16,16 +16,16 @@ class QvChat extends base
     public function getData()
     {
         $data = self::getTimesList();
-        $svnData = [];
+        $qvChatData = [];
         foreach($data as $d){
             $timestamp = $d['timestamp'];
             if($ret = $this->isWork($timestamp)){
                 $Ymd = date('Ymd', $timestamp); // 相同日期 相同加班区间(早 中 晚)合并在一起
                 $d = array_merge($d, $ret); // 合并
-                $svnData[$Ymd][$d['name']][] = $d;
+                $qvChatData[$Ymd][$d['name']][] = $d;
             }
         }
-        return self::analyze($svnData, '截图');
+        return self::analyze($qvChatData, '截图');
     }
 
     /**

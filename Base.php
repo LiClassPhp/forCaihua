@@ -4,7 +4,7 @@ require 'ChineseHolidayCalculator.php';
 class Base
 {
     public $workHours = 8;
-    public $hourlyRate = 91.95; // 假设每小时基准工资100元，请根据实际情况调整
+    public $hourlyRate = 91.95; // 假设每小时基准工资100元，请根据实际情况调整 16000/21.75/8
 
     /**
      * 判断时间戳是否在指定时间段内
@@ -71,6 +71,7 @@ class Base
         return $aMap;
     }
 
+    // 早中晚 只取最晚的一条数据返回
     public function analyze($data, $typeName = '提交')
     {
         $ret = [];
@@ -100,11 +101,12 @@ class Base
         return $ret;
     }
 
-    // 根据日期和加班时间 计算具体加班费
+    // 根据日期和加班时间 计算具体加班费 (四舍五入)
     protected function calcMoney($Ymd, $minutes)
     {
         $minuteRate = $this->hourlyRate / 60;
-        return $minutes * $minuteRate * (self::isWeekEnd($Ymd) ? 2 : 1.5);
+        $money = $minutes * $minuteRate * (self::isWeekEnd($Ymd) ? 2 : 1.5);
+        return round($money, 2);
     }
 
     /**
