@@ -67,6 +67,7 @@ fi
 SVN_REPOS=(
     "$SVN_ROOT/syslib"
     "$SVN_ROOT/72mao"
+    "$SVN_ROOT/docker"
 #    "$SVN_ROOT/private-scm"
 )
 
@@ -361,4 +362,4 @@ echo "完成！日志已保存到 $base_path"
 
 #  ./svnlog.sh -s 2023-04-01 -e 2025-11-13 -p /Users/liclass/Documents/财华维权文件/svn/svn_shell -r /Users/liclass/Documents/wwwroot
 
-#  ./html/caihua/code/svnlog.sh -s 2025-12-27 -e 2026-01-12 -p /Users/liclass/Documents/财华维权文件/svn/svn_shell -r /Users/liclass/Documents/wwwroot
+#  /Users/liclass/Documents/php-project/html/caihua/code/svnlog.sh -s 2026-03-15 -e 2026-03-15 -p /Users/liclass/Documents/财华维权文件补录\(20251228起\)/svn/svn_shell -r /Users/liclass/Documents/wwwroot
