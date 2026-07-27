@@ -35,4 +35,7 @@ SvnLog && NginxLog QvLog 最终结果
 工作日 早(00:00-结束) 中(12:00-结束) 晚(18:30-结束)
 周末 早(开始-结束)  晚(开始-结束)
 
+本地访问地址:http://localhost/caihua/code/index.php
+结果:Excel 文件已生成到: /var/www/html/caihua/code/加班记录表.xlsx
+
 
